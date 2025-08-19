@@ -68,3 +68,91 @@ endmodule
 //
 //💡 In short:
 //modport in SystemVerilog is like giving different access permissions to the same interface for different modules — a bit like giving one person "read-only" access and another "write" access to the same shared file.
+
+
+// ======================================================= clocking blocks ====================================================//
+//Purpose of a Clocking Block
+//In SystemVerilog, clocking blocks are used to synchronize signals between the DUT and the testbench.
+//They mainly solve race conditions that can happen between:
+//
+//The testbench driving or sampling signals, and
+//The DUT sampling or driving signals.
+//
+//👉 Without a clocking block:
+//You may accidentally drive a signal at the same time the DUT samples it, causing glitches.
+//You may sample DUT signals before they are updated, leading to mismatches.
+//
+//👉 With a clocking block:
+//You can specify input skew and output skew relative to the clock.
+//This ensures testbench drives happen slightly before DUT samples, and testbench samples happen after DUT drives.
+//
+//Example Without Clocking Block (Race Condition)
+
+interface intf(input logic clk);
+    logic req;
+    logic gnt;
+endinterface
+
+module tb;
+    bit clk;
+    always #5 clk = ~clk;
+
+    intf i(clk);
+
+    // Testbench directly drives/samples
+    initial begin
+        i.req = 1;        // Drive at posedge
+        @(posedge clk);
+        $display("Sample gnt = %0b", i.gnt);  // May sample too early
+    end
+endmodule
+//⚠️ Problem:
+//Here req might change at the same posedge the DUT is also sampling it.
+//Similarly, gnt may be read before DUT updates it.
+//This creates a race condition.
+//
+//Example With Clocking Block (Safe & Synchronized)
+
+interface intf(input logic clk);
+    logic req;
+    logic gnt;
+
+    // Define a clocking block
+    clocking cb @(posedge clk);
+        default input #1step output #1step;  
+        // input  -> sampled 1 step AFTER posedge
+        // output -> driven 1 step BEFORE posedge
+        output req;
+        input  gnt;
+    endclocking
+endinterface
+
+module tb;
+    bit clk = 0;
+    always #5 clk = ~clk;
+
+    intf i(clk);
+
+    initial begin
+        // Drive using clocking block
+        i.cb.req <= 1;          // Driven 1 step before clock edge
+        @(i.cb);                // Wait for clocking event
+        $display("Sample gnt = %0b", i.cb.gnt);  // Sample after DUT updates
+    end
+endmodule
+
+//Key Points in the Example
+//clocking cb @(posedge clk);
+//   → Defines clocking block sensitive to posedge clk.
+//default input #1step output #1step;
+//   → Defines skews:
+//output #1step: testbench drives just before clock edge → DUT sees stable signal.
+//input #1step: testbench samples just after DUT updates signals.
+//Access signals via i.cb.req and i.cb.gnt.
+//Testbench uses clocking block, avoiding race.
+//
+//Importance
+//✅ Eliminates race conditions.
+//✅ Provides clean synchronization.
+//✅ Makes testbench behavior predictable.
+//✅ Widely used in UVM testbenches for driving and sampling DUT signals.
