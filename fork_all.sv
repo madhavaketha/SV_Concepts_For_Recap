@@ -84,3 +84,36 @@ endmodule
 //process::self() → gets a handle to the current running thread.
 //p2.kill(); → stops only thread 2, while others continue normally.
 //If you wanted to stop all, you’d either use disable fork; or call kill() on each process handle.
+
+
+// Wait for 2 processes to complete and then disable the fork 
+module partial_fork_join;
+
+  event done_event;
+  int done_count = 0;
+
+  task process(string name, int delay);
+    #delay;
+    $display("[%0t] %s completed", $time, name);
+    -> done_event; // signal completion
+  endtask
+
+  initial begin
+    fork
+      process("Task A", 10);
+      process("Task B", 20);
+      process("Task C", 30);
+    join_none
+
+    // Wait for exactly 2 events
+    forever begin
+      @done_event;
+      done_count++;
+      if (done_count == 2) begin
+        $display("[%0t] Exiting after 2 processes", $time);
+        disable fork; // terminates remaining forked processes
+        break;
+      end
+    end
+  end
+endmodule
