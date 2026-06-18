@@ -15,8 +15,8 @@ Can have race conditions if multiple drivers act on the same signal.
 Inactive Region
 Executes after the Active region if events are scheduled with ->>.
 Rarely used in testbenches.
+  
 Non-blocking Assign (NBA) Region
-
 All non-blocking assignments (<=) update here, after Active region finishes.
 Ensures consistency across RTL designs using <=.
 
