@@ -1,5 +1,24 @@
 1.write a constaint to generate an array with values <=20 and the sum of the array elements equals to 100
+class packet;
+  rand int arr[10];
+  constraint c_arr {
+    foreach (arr[i])
+      arr[i] inside {[0:20]};
+      arr.sum() == 100;
+  }
+endclass
+	
 2.write a constaint to generate this pattern 0102030405 
+constraint c_pattern {
+  a.size() == 10;
+  foreach (a[i]) {
+    if (i % 2 == 0)
+      a[i] == 0;
+    else
+      a[i] == (i + 1) / 2;
+  }
+}
+	  
 3.write a constaint to generate this pattern 
   0 0 0 1
   0 0 1 1
