@@ -378,3 +378,25 @@ for (int i = 0; i < N; i++) begin
   end
   $display();
 end
+
+
+*
+**
+* *
+*  *
+*****
+
+module hollow_triangle;
+  int N = 5;
+  initial begin
+    for (int i = 0; i < N; i++) begin
+      for (int j = 0; j <= i; j++) begin
+        if (j == 0 || j == i || i == N-1)
+          $write("*");
+        else
+          $write(" ");
+      end
+      $display();
+    end
+  end
+endmodule
